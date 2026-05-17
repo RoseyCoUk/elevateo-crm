@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { getStore, saveStore, type LocalUser } from './store';
 import { hashPassword, verifyPassword } from './hash';
@@ -8,18 +8,12 @@ const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 export { SESSION_COOKIE };
 
-function newToken() {
-  return randomBytes(32).toString('hex');
-}
-
 export async function readSessionUser(): Promise<LocalUser | null> {
   const jar = await cookies();
-  const token = jar.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
+  const userId = jar.get(SESSION_COOKIE)?.value;
+  if (!userId) return null;
   const store = getStore();
-  const session = store.sessions.find((s) => s.token === token);
-  if (!session) return null;
-  const user = store.users.find((u) => u.id === session.user_id);
+  const user = store.users.find((u) => u.id === userId);
   return user ?? null;
 }
 
@@ -30,15 +24,8 @@ export async function signInWithPassword(email: string, password: string) {
   if (!user.password_hash || !verifyPassword(password, user.password_hash)) {
     return { error: { message: 'Invalid email or password' } };
   }
-  const token = newToken();
-  store.sessions.push({
-    token,
-    user_id: user.id,
-    created_at: new Date().toISOString(),
-  });
-  saveStore();
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, token, {
+  jar.set(SESSION_COOKIE, user.id, {
     httpOnly: true,
     sameSite: 'lax',
     path: '/',
@@ -77,11 +64,9 @@ export async function signUpUser(
     password_hash: hashPassword(password),
   };
   store.users.push(user);
-  const token = newToken();
-  store.sessions.push({ token, user_id: user.id, created_at: now });
   saveStore();
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, token, {
+  jar.set(SESSION_COOKIE, user.id, {
     httpOnly: true,
     sameSite: 'lax',
     path: '/',
@@ -92,17 +77,11 @@ export async function signUpUser(
 
 export async function signOutCurrent() {
   const jar = await cookies();
-  const token = jar.get(SESSION_COOKIE)?.value;
-  if (token) {
-    const store = getStore();
-    store.sessions = store.sessions.filter((s) => s.token !== token);
-    saveStore();
-  }
   jar.delete(SESSION_COOKIE);
 }
 
 export async function hasSession(token: string | undefined): Promise<boolean> {
   if (!token) return false;
   const store = getStore();
-  return !!store.sessions.find((s) => s.token === token);
+  return !!store.users.find((user) => user.id === token);
 }

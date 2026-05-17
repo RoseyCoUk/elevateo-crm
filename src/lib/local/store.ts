@@ -41,6 +41,16 @@ const DEFAULT_PASSWORD = 'password123';
 
 let cache: Store | null = null;
 
+function tryPersist(store: Store) {
+  try {
+    if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+    writeFileSync(DB_FILE, JSON.stringify(store, null, 2), 'utf8');
+  } catch {
+    // Read-only runtimes such as Vercel cannot persist local state.
+    // For demo mode we keep serving the in-memory seeded store.
+  }
+}
+
 function emptyStore(): Store {
   return {
     divisions: [],
@@ -428,12 +438,16 @@ function seedClientsAndProjects(
 
 function load(): Store {
   if (cache) return cache;
-  if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+  } catch {
+    // Ignore mkdir failures in read-only runtimes and continue in memory.
+  }
 
   if (!existsSync(DB_FILE)) {
     const fresh = emptyStore();
     seed(fresh);
-    writeFileSync(DB_FILE, JSON.stringify(fresh, null, 2), 'utf8');
+    tryPersist(fresh);
     cache = fresh;
     return cache;
   }
@@ -445,13 +459,13 @@ function load(): Store {
     if (!cache.divisions?.length || !cache.users?.length) {
       cache = emptyStore();
       seed(cache);
-      writeFileSync(DB_FILE, JSON.stringify(cache, null, 2), 'utf8');
+      tryPersist(cache);
     }
     return cache;
   } catch {
     cache = emptyStore();
     seed(cache);
-    writeFileSync(DB_FILE, JSON.stringify(cache, null, 2), 'utf8');
+    tryPersist(cache);
     return cache;
   }
 }
@@ -462,8 +476,7 @@ export function getStore(): Store {
 
 export function saveStore() {
   if (!cache) return;
-  if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
-  writeFileSync(DB_FILE, JSON.stringify(cache, null, 2), 'utf8');
+  tryPersist(cache);
 }
 
 export function resetStore() {
