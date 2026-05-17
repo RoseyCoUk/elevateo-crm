@@ -157,7 +157,11 @@ export async function moveTaskStatus(id: string, status: string) {
     };
   }
 
-  const { error } = await supabase.from('tasks').update({ status }).eq('id', id);
+  const completedAt = status === 'done' ? new Date().toISOString() : null;
+  const { error } = await supabase
+    .from('tasks')
+    .update({ status, completed_at: completedAt })
+    .eq('id', id);
   if (error) return { error: error.message };
 
   await supabase.from('activity_log').insert({
@@ -243,7 +247,10 @@ export async function decideApproval(
   const newStatus = decision === 'approved' ? 'done' : 'rejected';
   const { error: tErr } = await supabase
     .from('tasks')
-    .update({ status: newStatus })
+    .update({
+      status: newStatus,
+      completed_at: newStatus === 'done' ? new Date().toISOString() : null,
+    })
     .eq('id', approval.task_id);
   if (tErr) return { error: tErr.message };
 

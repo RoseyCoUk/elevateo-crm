@@ -37,7 +37,7 @@ export interface Store {
 
 const DATA_DIR = path.join(process.cwd(), '.data');
 const DB_FILE = path.join(DATA_DIR, 'elevateoco.json');
-const DEFAULT_PASSWORD = 'ChangeMe123!';
+const DEFAULT_PASSWORD = 'password123';
 
 let cache: Store | null = null;
 
@@ -108,7 +108,7 @@ function seed(store: Store) {
       division: 'admin',
       extraDivisions: ['sales', 'marketing', 'ecommerce'],
       manager: null,
-      password: 'OkazakiFuhrer123@',
+      password: 'password123',
     },
     // Tier 2: division owners under Allan
     {

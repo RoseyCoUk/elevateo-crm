@@ -10,6 +10,16 @@ import type {
   User,
 } from './supabase/types';
 
+const TASK_ARCHIVE_AGE_MS = 14 * 24 * 60 * 60 * 1000;
+
+function isArchivedTask(task: Task): boolean {
+  if (task.status !== 'done') return false;
+  const reference = task.completed_at ?? task.updated_at ?? task.created_at;
+  const timestamp = new Date(reference).getTime();
+  if (Number.isNaN(timestamp)) return false;
+  return Date.now() - timestamp > TASK_ARCHIVE_AGE_MS;
+}
+
 export async function getCurrentUser() {
   const supabase = await createClient();
   const {
@@ -82,6 +92,7 @@ export async function getTasks(opts?: {
   assignedTo?: string;
   reviewerId?: string;
   status?: string;
+  includeArchived?: boolean;
 }): Promise<Task[]> {
   const supabase = await createClient();
   let q = supabase.from('tasks').select('*').order('position').order('created_at');
@@ -90,7 +101,8 @@ export async function getTasks(opts?: {
   if (opts?.reviewerId) q = q.eq('reviewer_id', opts.reviewerId);
   if (opts?.status) q = q.eq('status', opts.status);
   const { data } = await q;
-  return (data ?? []) as Task[];
+  const tasks = (data ?? []) as Task[];
+  return opts?.includeArchived ? tasks : tasks.filter((task) => !isArchivedTask(task));
 }
 
 export async function getTask(id: string): Promise<Task | null> {
