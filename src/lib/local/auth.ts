@@ -56,6 +56,8 @@ export async function signUpUser(
     skin_tone: null,
     timezone: null,
     bio: null,
+    last_seen_at: null,
+    presence_status: null,
     cold_call_goal: 40,
     division_id: null,
     divisions: [],

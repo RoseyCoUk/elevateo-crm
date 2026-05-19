@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { Sidebar } from '@/components/shell/sidebar';
 import { TransitionFader } from '@/components/shell/transition-fader';
 import { ChameleonEasterEgg } from '@/components/shell/chameleon-easter-egg';
+import { HeartbeatLoop } from '@/components/shell/heartbeat-loop';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +39,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main className="overflow-y-auto bg-[var(--color-bg)]">{children}</main>
       <TransitionFader />
       <ChameleonEasterEgg />
+      <HeartbeatLoop />
     </div>
   );
 }

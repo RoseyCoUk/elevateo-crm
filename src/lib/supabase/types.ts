@@ -77,6 +77,9 @@ export interface User {
   skin_tone: string | null;
   timezone: string | null;
   bio: string | null;
+  last_seen_at: string | null;
+  /** Manual override: 'online' | 'away' | 'dnd' | null (null = auto). */
+  presence_status: string | null;
   cold_call_goal: number;
   /** Primary division — drives sidebar / default filtering / division lists. */
   division_id: string | null;

@@ -12,7 +12,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { initials } from '@/lib/utils';
 import { roleLabel } from '@/lib/formatters';
+import { effectiveStatus, statusLabel, statusColor } from '@/lib/presence';
 import type { User } from '@/lib/supabase/types';
+import { PresenceDot } from './presence-dot';
 
 function liveTime(timezone: string | null | undefined): string | null {
   if (!timezone) return null;
@@ -61,16 +63,32 @@ export function ProfileCardDialog({
           <DialogTitle className="sr-only">{name}</DialogTitle>
         </DialogHeader>
         <div className="flex items-start gap-4">
-          <Avatar className="h-16 w-16">
-            {user.avatar_url ? <AvatarImage src={user.avatar_url} alt={name} /> : null}
-            <AvatarFallback>{initials(name)}</AvatarFallback>
-          </Avatar>
+          <span className="relative inline-flex">
+            <Avatar className="h-16 w-16">
+              {user.avatar_url ? <AvatarImage src={user.avatar_url} alt={name} /> : null}
+              <AvatarFallback>{initials(name)}</AvatarFallback>
+            </Avatar>
+            <PresenceDot user={user} size={14} />
+          </span>
           <div className="flex-1 min-w-0">
             <div className="text-[16px] font-semibold text-[var(--color-fg)] truncate">
               {name}
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
               <Badge tone="default">{roleLabel[user.role]}</Badge>
+              {(() => {
+                const s = effectiveStatus(user);
+                if (s === 'offline') return null;
+                return (
+                  <span className="inline-flex items-center gap-1 text-[11px] text-[var(--color-fg-muted)]">
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ background: statusColor[s] }}
+                    />
+                    {statusLabel[s]}
+                  </span>
+                );
+              })()}
               {user.is_active ? null : <Badge tone="default">Inactive</Badge>}
             </div>
             {user.bio ? (
