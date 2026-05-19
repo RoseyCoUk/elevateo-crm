@@ -32,7 +32,6 @@ const navItems = [
   { href: '/app/clients', label: 'Clients', icon: Building2 },
   { href: '/app/sops', label: 'SOP library', icon: BookOpen },
   { href: '/app/inbox', label: 'Notifications', icon: Inbox },
-  { href: '/app/people', label: 'People', icon: Users },
   { href: '/app/hierarchy', label: 'Hierarchy', icon: Network },
 ];
 
