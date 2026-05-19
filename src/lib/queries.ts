@@ -152,3 +152,16 @@ export async function getUnreadNotificationCount(userId: string): Promise<number
     .is('read_at', null);
   return count ?? 0;
 }
+
+export async function getLatestUnreadType(userId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('notifications')
+    .select('type, created_at')
+    .eq('user_id', userId)
+    .is('read_at', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data as { type: string } | null)?.type ?? null;
+}

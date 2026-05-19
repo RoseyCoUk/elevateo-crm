@@ -14,6 +14,7 @@ const TaskCreate = z.object({
   description: z.string().optional(),
   assigned_to: optStr,
   reviewer_id: optStr,
+  blocked_by: optStr,
   priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
   deadline: optStr,
 });
@@ -33,6 +34,7 @@ export async function createTask(formData: FormData) {
       description: parsed.data.description || null,
       assigned_to: parsed.data.assigned_to || null,
       reviewer_id: parsed.data.reviewer_id || null,
+      blocked_by: parsed.data.blocked_by || null,
       priority: parsed.data.priority ?? 'normal',
       deadline: parsed.data.deadline ? new Date(parsed.data.deadline).toISOString() : null,
       created_by: profile.id,
@@ -100,6 +102,7 @@ const TaskUpdate = z.object({
   description: optStr,
   assigned_to: optStr,
   reviewer_id: optStr,
+  blocked_by: optStr,
   priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
   deadline: optStr,
 });
@@ -118,6 +121,7 @@ export async function updateTask(id: string, formData: FormData) {
       description: parsed.data.description ?? null,
       assigned_to: parsed.data.assigned_to || null,
       reviewer_id: parsed.data.reviewer_id || null,
+      blocked_by: parsed.data.blocked_by || null,
       priority: parsed.data.priority,
       deadline: parsed.data.deadline ? new Date(parsed.data.deadline).toISOString() : null,
     })
@@ -177,6 +181,19 @@ export async function moveTaskStatus(id: string, status: string) {
   const supabase = await createClient();
   const { data: task } = await supabase.from('tasks').select('*').eq('id', id).maybeSingle();
   if (!task) return { error: 'Task not found' };
+
+  if (task.blocked_by && status !== 'todo' && status !== 'blocked') {
+    const { data: blocker } = await supabase
+      .from('tasks')
+      .select('status, title')
+      .eq('id', task.blocked_by)
+      .maybeSingle();
+    if (blocker && blocker.status !== 'done') {
+      return {
+        error: `Blocked by "${blocker.title}" — finish that one first.`,
+      };
+    }
+  }
 
   if (status === 'done' && task.reviewer_id) {
     return {

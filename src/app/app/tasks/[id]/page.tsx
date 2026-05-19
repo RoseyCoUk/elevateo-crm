@@ -35,7 +35,7 @@ import {
   taskStatusTone,
 } from '@/lib/formatters';
 import { formatDate, relativeTime } from '@/lib/utils';
-import type { Approval } from '@/lib/supabase/types';
+import type { Approval, Task } from '@/lib/supabase/types';
 
 export default async function TaskDetailPage({
   params,
@@ -48,13 +48,14 @@ export default async function TaskDetailPage({
   if (!task) notFound();
 
   const supabase = await createClient();
-  const [project, users, comments, projects, divisions, { data: approvals }, { data: activity }] =
+  const [project, users, comments, projects, divisions, siblingTasks, { data: approvals }, { data: activity }] =
     await Promise.all([
       getProject(task.project_id),
       getAllUsers(),
       getTaskComments(task.id),
       getProjects(),
       getDivisions(),
+      supabase.from('tasks').select('*').eq('project_id', task.project_id).then((r) => r.data ?? []),
       supabase
         .from('approvals')
         .select('*')
@@ -79,6 +80,9 @@ export default async function TaskDetailPage({
 
   const approvalRows = (approvals ?? []) as Approval[];
   const openApproval = approvalRows.find((a) => a.status === 'pending') ?? null;
+  const blocker = task.blocked_by
+    ? (siblingTasks as Task[]).find((t) => t.id === task.blocked_by) ?? null
+    : null;
 
   return (
     <div>
@@ -102,6 +106,16 @@ export default async function TaskDetailPage({
               <span className={`text-xs ${overdue ? 'text-red-300' : 'text-[var(--color-fg-muted)]'}`}>
                 Due {formatDate(task.deadline, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
               </span>
+            ) : null}
+            {blocker ? (
+              <Link
+                href={`/app/tasks/${blocker.id}`}
+                className="inline-flex items-center gap-1 text-xs"
+              >
+                <Badge tone={blocker.status === 'done' ? 'success' : 'warning'}>
+                  Blocked by: {blocker.title}
+                </Badge>
+              </Link>
             ) : null}
           </>
         }
@@ -127,6 +141,7 @@ export default async function TaskDetailPage({
                   users={users}
                   divisions={divisions}
                   existing={task}
+                  projectTasks={siblingTasks as any}
                 />
               </DialogContent>
             </Dialog>

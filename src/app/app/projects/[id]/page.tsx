@@ -118,6 +118,7 @@ export default async function ProjectDetailPage({
                   projects={[project]}
                   users={users}
                   divisions={divisions}
+                  projectTasks={tasks}
                 />
               </DialogContent>
             </Dialog>

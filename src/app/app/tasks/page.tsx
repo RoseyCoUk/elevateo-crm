@@ -79,6 +79,7 @@ export default async function TasksPage({
                 clients={clients}
                 users={users}
                 divisions={divisions}
+                projectTasks={all}
               />
             </DialogContent>
           </Dialog>

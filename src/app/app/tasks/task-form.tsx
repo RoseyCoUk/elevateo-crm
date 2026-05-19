@@ -26,6 +26,7 @@ export function TaskForm({
   users,
   divisions,
   existing,
+  projectTasks,
 }: {
   projectId?: string;
   projects: Project[];
@@ -33,6 +34,8 @@ export function TaskForm({
   users: User[];
   divisions: Division[];
   existing?: Task;
+  /** Existing tasks in the same project, for the "Depends on" picker. */
+  projectTasks?: Task[];
 }) {
   const [pending, setPending] = useState(false);
 
@@ -48,6 +51,14 @@ export function TaskForm({
   const [assignee, setAssignee] = useState<string>(existing?.assigned_to ?? UNASSIGNED);
   const [reviewer, setReviewer] = useState<string>(existing?.reviewer_id ?? '');
   const [priority, setPriority] = useState<string>(existing?.priority ?? 'normal');
+  const [blockedBy, setBlockedBy] = useState<string>(existing?.blocked_by ?? '');
+
+  const dependencyOptions = useMemo(() => {
+    if (!projectTasks?.length || !proj) return [];
+    return projectTasks
+      .filter((t) => t.project_id === proj && t.id !== existing?.id)
+      .sort((a, b) => a.title.localeCompare(b.title));
+  }, [projectTasks, proj, existing?.id]);
 
   const divisionMap = useMemo(() => new Map(divisions.map((d) => [d.id, d.code])), [divisions]);
 
@@ -101,6 +112,7 @@ export function TaskForm({
     }
     if (assignee && assignee !== UNASSIGNED) formData.set('assigned_to', assignee);
     if (reviewer) formData.set('reviewer_id', reviewer);
+    formData.set('blocked_by', blockedBy);
     formData.set('priority', priority);
     setPending(true);
     try {
@@ -261,6 +273,38 @@ export function TaskForm({
             defaultValue={existing?.deadline ? existing.deadline.slice(0, 16) : ''}
           />
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Depends on · optional</Label>
+        <Select
+          value={blockedBy || '__none__'}
+          onValueChange={(v) => setBlockedBy(v === '__none__' ? '' : v)}
+          disabled={!proj || dependencyOptions.length === 0}
+        >
+          <SelectTrigger>
+            <SelectValue
+              placeholder={
+                !proj
+                  ? 'Pick a project first'
+                  : dependencyOptions.length === 0
+                  ? 'No other tasks in this project yet'
+                  : 'No dependency'
+              }
+            />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">No dependency</SelectItem>
+            {dependencyOptions.map((t) => (
+              <SelectItem key={t.id} value={t.id}>
+                {t.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-[11px] text-[var(--color-fg-dim)]">
+          Blocks this task from moving past "To do" until the chosen task is done.
+        </p>
       </div>
 
       <div className="flex justify-end">

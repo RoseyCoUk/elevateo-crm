@@ -5,7 +5,9 @@ import {
   ArrowRight,
   CalendarDays,
   CheckSquare,
+  Megaphone,
   PhoneCall,
+  Pin,
   ShieldCheck,
 } from 'lucide-react';
 import { PageHeader } from '@/components/shell/page-header';
@@ -22,7 +24,8 @@ import {
   requireCurrentUser,
 } from '@/lib/queries';
 import { divisionTone, projectStatusLabel, projectStatusTone } from '@/lib/formatters';
-import type { ActivityLogEntry, Project, Task } from '@/lib/supabase/types';
+import type { ActivityLogEntry, Announcement, Project, Task } from '@/lib/supabase/types';
+import { relativeTime } from '@/lib/utils';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -79,6 +82,17 @@ export default async function CommandCenterPage() {
     .order('created_at', { ascending: false })
     .limit(10);
 
+  const { data: announcementsRaw } = await supabase
+    .from('announcements')
+    .select('*')
+    .order('pinned', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(8);
+  const nowIso = new Date().toISOString();
+  const announcements = ((announcementsRaw ?? []) as Announcement[])
+    .filter((a) => !a.expires_at || a.expires_at > nowIso)
+    .slice(0, 3);
+
   const dueSoonProjects = activeProjects
     .filter((project) => project.due_date)
     .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
@@ -123,6 +137,39 @@ export default async function CommandCenterPage() {
           profile.full_name.split(' ')[0] || 'Team',
         )}
       />
+
+      {announcements.length > 0 ? (
+        <div className="px-7 pt-5 space-y-2">
+          {announcements.map((a) => {
+            const author = a.author_id ? userMap.get(a.author_id) : null;
+            return (
+              <div
+                key={a.id}
+                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 flex items-start gap-3"
+              >
+                <div className="mt-0.5">
+                  {a.pinned ? (
+                    <Pin className="h-4 w-4 text-[var(--color-warning)]" />
+                  ) : (
+                    <Megaphone className="h-4 w-4 text-[var(--color-accent)]" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13px] font-semibold text-[var(--color-fg)] truncate">
+                    {a.title}
+                  </div>
+                  <div className="text-[12px] text-[var(--color-fg-muted)] whitespace-pre-wrap mt-0.5">
+                    {a.body}
+                  </div>
+                  <div className="text-[11px] text-[var(--color-fg-dim)] mt-1.5">
+                    {author?.full_name ?? 'Admin'} · {relativeTime(a.created_at)}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-7 pb-3">
         <Stat

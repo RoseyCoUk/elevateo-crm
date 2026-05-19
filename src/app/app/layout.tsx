@@ -7,6 +7,7 @@ import { Topbar } from '@/components/shell/topbar';
 import {
   getCurrentUser,
   getDivisions,
+  getLatestUnreadType,
   getUnreadNotificationCount,
   getPendingApprovalsForUser,
 } from '@/lib/queries';
@@ -15,9 +16,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const session = await getCurrentUser();
   if (!session) redirect('/login');
 
-  const [divisions, unread, pendingApprovals] = await Promise.all([
+  const [divisions, unread, latestType, pendingApprovals] = await Promise.all([
     getDivisions(),
     session.profile ? getUnreadNotificationCount(session.profile.id) : Promise.resolve(0),
+    session.profile ? getLatestUnreadType(session.profile.id) : Promise.resolve(null),
     session.profile ? getPendingApprovalsForUser(session.profile.id) : Promise.resolve([]),
   ]);
 
@@ -30,7 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           user={session.profile}
         />
       </div>
-      <Topbar user={session.profile} unread={unread} />
+      <Topbar user={session.profile} unread={unread} latestType={latestType} />
       <main className="overflow-y-auto bg-[var(--color-bg)]">{children}</main>
     </div>
   );

@@ -29,7 +29,18 @@ export type NotificationType =
   | 'task_rejected'
   | 'comment_reply'
   | 'project_assigned'
-  | 'approval_pending';
+  | 'approval_pending'
+  | 'announcement';
+
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string;
+  author_id: string | null;
+  pinned: boolean;
+  expires_at: string | null;
+  created_at: string;
+}
 
 export interface Division {
   id: string;
