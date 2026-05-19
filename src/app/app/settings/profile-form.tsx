@@ -19,6 +19,7 @@ const SKIN_TONES: { value: string; label: string; hex: string }[] = [
   { value: 'caramel', label: 'Caramel', hex: '#9b6a40' },
   { value: 'cocoa', label: 'Cocoa', hex: '#704a2c' },
   { value: 'espresso', label: 'Espresso', hex: '#3f2918' },
+  { value: 'yerrow', label: 'Yerrow', hex: '#ffd54a' },
 ];
 
 const AVATAR_MAX_SIDE = 192;
