@@ -28,7 +28,6 @@ const navItems = [
   { href: '/app/approvals', label: 'Approvals', icon: ShieldCheck },
   { href: '/app/tasks', label: 'Tasks', icon: CheckSquare },
   { href: '/app/projects', label: 'Projects', icon: GanttChartSquare },
-  { href: '/app/proposals', label: 'Proposals', icon: FileText },
   { href: '/app/clients', label: 'Clients', icon: Building2 },
   { href: '/app/sops', label: 'SOP library', icon: BookOpen },
   { href: '/app/inbox', label: 'Notifications', icon: Inbox },
@@ -107,6 +106,19 @@ export function Sidebar({
             <span className="flex-1">Cold Caller</span>
             <ExternalLink className="h-3 w-3 text-[var(--color-fg-dim)]" />
           </a>
+
+          <Link
+            href="/app/proposals"
+            className={cn(
+              'flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition',
+              pathname?.startsWith('/app/proposals')
+                ? 'bg-[var(--color-surface-3)] text-[var(--color-fg)] font-medium'
+                : 'text-[var(--color-fg-muted)] hover:bg-[var(--color-surface-3)]/70 hover:text-[var(--color-fg)]'
+            )}
+          >
+            <FileText className="h-4 w-4" />
+            <span className="flex-1">Proposals</span>
+          </Link>
         </div>
 
         <div className="mt-6 px-2">
