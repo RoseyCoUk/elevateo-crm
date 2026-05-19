@@ -3,8 +3,8 @@ import { Hash } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { getAllUsers, getDivisions, requireCurrentUser } from '@/lib/queries';
 import { UserPill } from '@/components/shared/user-pill';
-import { Composer } from '../composer';
-import { MessageList } from '../message-list';
+import { RoomShell } from '../room-shell';
+import type { User } from '@/lib/supabase/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +37,8 @@ export default async function ChatRoomPage({
 
   const userMap = new Map(users.map((u) => [u.id, u]));
   let title: React.ReactNode = 'Room';
+  let members: User[] = [];
+
   if (room.kind === 'division') {
     const div = divisions.find((d) => d.id === room.division_id);
     title = (
@@ -45,10 +47,19 @@ export default async function ChatRoomPage({
         {div?.name ?? 'Division'}
       </span>
     );
+    if (div) {
+      members = users.filter(
+        (u) =>
+          u.is_active &&
+          (u.division_id === div.id || (u.divisions ?? []).includes(div.code)),
+      );
+    }
   } else if (room.kind === 'dm') {
     const otherId = room.user_a_id === profile.id ? room.user_b_id : room.user_a_id;
     const other = otherId ? userMap.get(otherId) : null;
     title = <UserPill user={other ?? null} size="sm" />;
+    const me = userMap.get(profile.id);
+    members = [me, other].filter((u): u is User => Boolean(u));
   }
 
   const msgs = (messages ?? []) as Array<{
@@ -61,14 +72,13 @@ export default async function ChatRoomPage({
   }>;
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-2.5 text-[13px] font-semibold text-[var(--color-fg)]">
-        {title}
-      </div>
-
-      <MessageList messages={msgs} currentUserId={profile.id} users={users} />
-
-      <Composer roomId={id} users={users} />
-    </div>
+    <RoomShell
+      roomId={id}
+      title={title}
+      members={members}
+      messages={msgs}
+      currentUserId={profile.id}
+      allUsers={users}
+    />
   );
 }
