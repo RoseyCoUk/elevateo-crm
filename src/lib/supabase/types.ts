@@ -32,6 +32,7 @@ export type NotificationType =
   | 'approval_pending'
   | 'announcement'
   | 'chat_mention';
+export type ChatRoomKind = 'division' | 'dm' | 'group';
 
 export interface Announcement {
   id: string;
@@ -201,6 +202,37 @@ export interface FileRow {
   created_at: string;
 }
 
+export interface ChatRoom {
+  id: string;
+  kind: ChatRoomKind;
+  division_id: string | null;
+  user_a_id: string | null;
+  user_b_id: string | null;
+  name: string | null;
+  created_at: string;
+}
+
+export interface ChatRoomMember {
+  room_id: string;
+  user_id: string;
+  created_at: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  room_id: string;
+  author_id: string | null;
+  body: string;
+  pinned: boolean;
+  created_at: string;
+}
+
+export interface ChatReadState {
+  user_id: string;
+  room_id: string;
+  last_read_at: string;
+}
+
 // Generic Database shape for createServerClient<Database>().
 export interface Database {
   public: {
@@ -227,6 +259,22 @@ export interface Database {
         Update: Partial<ActivityLogEntry>;
       };
       files: { Row: FileRow; Insert: Partial<FileRow>; Update: Partial<FileRow> };
+      chat_rooms: { Row: ChatRoom; Insert: Partial<ChatRoom>; Update: Partial<ChatRoom> };
+      chat_room_members: {
+        Row: ChatRoomMember;
+        Insert: Partial<ChatRoomMember>;
+        Update: Partial<ChatRoomMember>;
+      };
+      chat_messages: {
+        Row: ChatMessage;
+        Insert: Partial<ChatMessage>;
+        Update: Partial<ChatMessage>;
+      };
+      chat_read_state: {
+        Row: ChatReadState;
+        Insert: Partial<ChatReadState>;
+        Update: Partial<ChatReadState>;
+      };
     };
     Views: Record<string, never>;
     Functions: {

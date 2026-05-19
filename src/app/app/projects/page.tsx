@@ -18,11 +18,18 @@ import {
   getClients,
   getDivisions,
   getProjects,
+  requireCurrentUser,
 } from '@/lib/queries';
 import { divisionTone, projectStatusLabel, projectStatusTone } from '@/lib/formatters';
 import { formatDate } from '@/lib/utils';
 
-export default async function ProjectsPage() {
+export default async function ProjectsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string }>;
+}) {
+  const { filter = 'current' } = await searchParams;
+  const { profile } = await requireCurrentUser();
   const [projects, clients, divisions, users] = await Promise.all([
     getProjects(),
     getClients(),
@@ -32,6 +39,23 @@ export default async function ProjectsPage() {
   const userMap = new Map(users.map((u) => [u.id, u]));
   const clientMap = new Map(clients.map((c) => [c.id, c]));
   const divMap = new Map(divisions.map((d) => [d.id, d]));
+  const filters: Array<{ label: string; key: string }> = [
+    { label: 'Mine', key: 'mine' },
+    { label: 'Current', key: 'current' },
+    { label: 'All', key: 'all' },
+  ];
+
+  let visibleProjects = projects;
+  if (filter === 'mine') {
+    visibleProjects = projects.filter((project) => {
+      const client = project.client_id ? clientMap.get(project.client_id) : null;
+      return project.lead_id === profile.id || client?.account_lead_id === profile.id;
+    });
+  } else if (filter === 'current') {
+    visibleProjects = projects.filter(
+      (project) => project.status !== 'completed' && project.status !== 'cancelled',
+    );
+  }
 
   return (
     <div>
@@ -55,7 +79,26 @@ export default async function ProjectsPage() {
         }
       />
 
-      <div className="p-6">
+      <div className="px-6 pt-4 pb-2 flex items-center gap-1.5">
+        {filters.map((item) => {
+          const active = filter === item.key;
+          return (
+            <Link
+              key={item.key}
+              href={`/app/projects?filter=${item.key}`}
+              className={`text-xs px-2.5 py-1 rounded-md border ${
+                active
+                  ? 'bg-[var(--color-surface-3)] border-[var(--color-border-strong)]'
+                  : 'border-[var(--color-border)] text-[var(--color-fg-muted)] hover:bg-[var(--color-surface-2)]'
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="p-6 pt-2">
         <Card>
           <div className="grid grid-cols-[1fr_140px_140px_140px_140px_110px] text-[10px] font-semibold uppercase tracking-wider text-[var(--color-fg-dim)] px-4 py-2 border-b border-[var(--color-border)]">
             <div>Title</div>
@@ -65,12 +108,12 @@ export default async function ProjectsPage() {
             <div>Status</div>
             <div className="text-right">Due</div>
           </div>
-          {projects.length === 0 ? (
+          {visibleProjects.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-[var(--color-fg-dim)]">
-              No projects yet. New project to scaffold one.
+              No projects match this filter.
             </div>
           ) : (
-            projects.map((p) => {
+            visibleProjects.map((p) => {
               const client = p.client_id ? clientMap.get(p.client_id) : null;
               const div = p.division_id ? divMap.get(p.division_id) : null;
               const lead = p.lead_id ? userMap.get(p.lead_id) : null;

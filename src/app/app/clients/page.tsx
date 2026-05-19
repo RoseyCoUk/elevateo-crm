@@ -13,18 +13,46 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { ClientForm } from './client-form';
-import { getAllUsers, getClients, getDivisions } from '@/lib/queries';
+import { getAllUsers, getClients, getDivisions, getProjects, requireCurrentUser } from '@/lib/queries';
 import { clientStatusTone, divisionTone } from '@/lib/formatters';
 import { formatDate } from '@/lib/utils';
 
-export default async function ClientsPage() {
-  const [clients, users, divisions] = await Promise.all([
+export default async function ClientsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string }>;
+}) {
+  const { filter = 'current' } = await searchParams;
+  const { profile } = await requireCurrentUser();
+  const [clients, users, divisions, projects] = await Promise.all([
     getClients(),
     getAllUsers(),
     getDivisions(),
+    getProjects(),
   ]);
   const userMap = new Map(users.map((u) => [u.id, u]));
   const divMap = new Map(divisions.map((d) => [d.id, d]));
+  const myClientIds = new Set(
+    clients
+      .filter(
+        (client) =>
+          client.account_lead_id === profile.id ||
+          projects.some((project) => project.client_id === client.id && project.lead_id === profile.id),
+      )
+      .map((client) => client.id),
+  );
+  const filters: Array<{ label: string; key: string }> = [
+    { label: 'Mine', key: 'mine' },
+    { label: 'Current', key: 'current' },
+    { label: 'All', key: 'all' },
+  ];
+
+  let visibleClients = clients;
+  if (filter === 'mine') {
+    visibleClients = clients.filter((client) => myClientIds.has(client.id));
+  } else if (filter === 'current') {
+    visibleClients = clients.filter((client) => client.status === 'active');
+  }
 
   return (
     <div>
@@ -48,7 +76,26 @@ export default async function ClientsPage() {
         }
       />
 
-      <div className="p-6">
+      <div className="px-6 pt-4 pb-2 flex items-center gap-1.5">
+        {filters.map((item) => {
+          const active = filter === item.key;
+          return (
+            <Link
+              key={item.key}
+              href={`/app/clients?filter=${item.key}`}
+              className={`text-xs px-2.5 py-1 rounded-md border ${
+                active
+                  ? 'bg-[var(--color-surface-3)] border-[var(--color-border-strong)]'
+                  : 'border-[var(--color-border)] text-[var(--color-fg-muted)] hover:bg-[var(--color-surface-2)]'
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="p-6 pt-2">
         <Card>
           <div className="grid grid-cols-[1fr_120px_180px_160px_120px] text-[10px] font-semibold uppercase tracking-wider text-[var(--color-fg-dim)] px-4 py-2 border-b border-[var(--color-border)]">
             <div>Name</div>
@@ -57,12 +104,12 @@ export default async function ClientsPage() {
             <div>Lead</div>
             <div className="text-right">Updated</div>
           </div>
-          {clients.length === 0 ? (
+          {visibleClients.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-[var(--color-fg-dim)]">
-              No clients yet. Hit <span className="text-[var(--color-fg)]">New client</span> to add the first.
+              No clients match this filter.
             </div>
           ) : (
-            clients.map((c) => {
+            visibleClients.map((c) => {
               const div = c.primary_division_id ? divMap.get(c.primary_division_id) : null;
               const lead = c.account_lead_id ? userMap.get(c.account_lead_id) : null;
               return (

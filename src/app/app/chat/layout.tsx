@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Hash, MessageCircle, Plus } from 'lucide-react';
+import { Hash, Plus, Users } from 'lucide-react';
 import { PageHeader } from '@/components/shell/page-header';
 import { UserPill } from '@/components/shared/user-pill';
 import { createClient } from '@/lib/supabase/server';
@@ -24,6 +24,7 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
   const divMap = new Map(divisions.map((d) => [d.id, d]));
 
   const divisionRooms = (rooms ?? []).filter((r) => r.kind === 'division');
+  const groupRooms = (rooms ?? []).filter((r) => r.kind === 'group');
   const dmRooms = (rooms ?? []).filter((r) => r.kind === 'dm');
 
   return (
@@ -58,6 +59,36 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
                 </Link>
               );
             })}
+          </div>
+
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-fg-dim)] mb-1.5 px-2">
+            Groups
+          </div>
+          <div className="space-y-0.5 mb-4">
+            {groupRooms.length === 0 ? (
+              <p className="px-2.5 text-[11px] text-[var(--color-fg-dim)]">
+                No private group rooms yet.
+              </p>
+            ) : (
+              groupRooms.map((r) => {
+                const n = unreadByRoom[r.id] ?? 0;
+                return (
+                  <Link
+                    key={r.id}
+                    href={`/app/chat/${r.id}`}
+                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-[var(--color-fg-muted)] hover:bg-[var(--color-surface-3)]/70 hover:text-[var(--color-fg)] transition"
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                    <span className="flex-1">{r.name ?? 'Group'}</span>
+                    {n > 0 ? (
+                      <span className="inline-flex min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full bg-[var(--color-danger)] text-white text-[10px] font-semibold">
+                        {n > 99 ? '99+' : n}
+                      </span>
+                    ) : null}
+                  </Link>
+                );
+              })
+            )}
           </div>
 
           <div className="flex items-center justify-between mb-1.5 px-2">

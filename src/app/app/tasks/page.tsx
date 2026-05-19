@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/shell/page-header';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TaskRow } from '@/components/shared/task-row';
 import {
@@ -43,8 +43,25 @@ export default async function TasksPage({
 
   const projectMap = new Map(projects.map((p) => [p.id, p]));
   const userMap = new Map(users.map((u) => [u.id, u]));
+  const reportsByManager = new Map<string, string[]>();
+  for (const user of users) {
+    if (!user.manager_id) continue;
+    const reportList = reportsByManager.get(user.manager_id) ?? [];
+    reportList.push(user.id);
+    reportsByManager.set(user.manager_id, reportList);
+  }
+  const visibleAssigneeIds = new Set<string>([profile.id]);
+  const queue = [profile.id];
+  while (queue.length) {
+    const managerId = queue.shift()!;
+    for (const reportId of reportsByManager.get(managerId) ?? []) {
+      if (visibleAssigneeIds.has(reportId)) continue;
+      visibleAssigneeIds.add(reportId);
+      queue.push(reportId);
+    }
+  }
 
-  let tasks = all;
+  let tasks = all.filter((task) => task.assigned_to && visibleAssigneeIds.has(task.assigned_to));
   if (filter === 'mine') tasks = tasks.filter((t) => t.assigned_to === profile.id);
   if (filter === 'overdue')
     tasks = tasks.filter(
@@ -56,34 +73,29 @@ export default async function TasksPage({
     );
 
   const filters: { label: string; key: string }[] = [
-    { label: 'All', key: '' },
+    { label: 'My team', key: '' },
     { label: 'Mine', key: 'mine' },
     { label: 'Awaiting my review', key: 'review' },
     { label: 'Overdue', key: 'overdue' },
-    { label: 'Daily habits', key: 'habits' },
   ];
 
-  let habits: Habit[] = [];
-  let habitDoneToday: string[] = [];
-  if (filter === 'habits') {
-    const supabase = await createClient();
-    const today = new Date().toISOString().slice(0, 10);
-    const [{ data: hs }, { data: comps }] = await Promise.all([
-      supabase
-        .from('habits')
-        .select('*')
-        .eq('user_id', profile.id)
-        .eq('is_active', true)
-        .order('sort_index'),
-      supabase
-        .from('habit_completions')
-        .select('*')
-        .eq('user_id', profile.id)
-        .eq('completed_on', today),
-    ]);
-    habits = (hs ?? []) as Habit[];
-    habitDoneToday = ((comps ?? []) as HabitCompletion[]).map((c) => c.habit_id);
-  }
+  const supabase = await createClient();
+  const today = new Date().toISOString().slice(0, 10);
+  const [{ data: hs }, { data: comps }] = await Promise.all([
+    supabase
+      .from('habits')
+      .select('*')
+      .eq('user_id', profile.id)
+      .eq('is_active', true)
+      .order('sort_index'),
+    supabase
+      .from('habit_completions')
+      .select('*')
+      .eq('user_id', profile.id)
+      .eq('completed_on', today),
+  ]);
+  const habits = (hs ?? []) as Habit[];
+  const habitDoneToday = ((comps ?? []) as HabitCompletion[]).map((c) => c.habit_id);
 
   return (
     <div>
@@ -131,13 +143,21 @@ export default async function TasksPage({
         })}
       </div>
 
-      <div className="p-6 pt-2">
+      <div className="p-6 pt-2 space-y-4">
         <Card>
-          {filter === 'habits' ? (
-            <div className="p-4">
-              <HabitsManager habits={habits} doneToday={habitDoneToday} />
+          <CardContent>
+            <div className="mb-3">
+              <div className="text-sm font-semibold">Personal habits</div>
+              <div className="text-[12px] text-[var(--color-fg-dim)]">
+                Personal-only recurring work. These stay yours and reset fresh each day.
+              </div>
             </div>
-          ) : tasks.length === 0 ? (
+            <HabitsManager habits={habits} doneToday={habitDoneToday} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          {tasks.length === 0 ? (
             <PixelPet />
           ) : (
             tasks.map((t) => (

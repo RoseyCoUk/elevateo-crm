@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { Hash } from 'lucide-react';
+import { Hash, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { getAllUsers, getDivisions, requireCurrentUser } from '@/lib/queries';
 import { UserPill } from '@/components/shared/user-pill';
@@ -71,6 +71,21 @@ export default async function ChatRoomPage({
     title = <UserPill user={other ?? null} size="sm" />;
     const me = userMap.get(profile.id);
     members = [me, other].filter((u): u is User => Boolean(u));
+  } else if (room.kind === 'group') {
+    const { data: roomMembers } = await supabase
+      .from('chat_room_members')
+      .select('user_id')
+      .eq('room_id', id);
+    title = (
+      <span className="inline-flex items-center gap-1.5">
+        <Users className="h-3.5 w-3.5" />
+        {room.name ?? 'Group'}
+      </span>
+    );
+    const memberIds = new Set(
+      ((roomMembers ?? []) as Array<{ user_id: string }>).map((m) => m.user_id),
+    );
+    members = users.filter((u) => memberIds.has(u.id));
   }
 
   const msgs = (messages ?? []) as Array<{
