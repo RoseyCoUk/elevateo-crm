@@ -9,6 +9,7 @@ import { getAllUsers, getDivisions, requireCurrentUser } from '@/lib/queries';
 import { relativeTime } from '@/lib/utils';
 import { AnnouncementForm } from './announcement-form';
 import { DeleteAnnouncementButton } from './delete-announcement-button';
+import { ClearInboxesButton } from './clear-inboxes-button';
 import type { Announcement } from '@/lib/supabase/types';
 
 export const dynamic = 'force-dynamic';
@@ -37,6 +38,7 @@ export default async function AnnouncementsAdminPage() {
       <PageHeader
         title="Announcements"
         description="Post once, everyone gets it in their inbox."
+        actions={<ClearInboxesButton />}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 p-6">
