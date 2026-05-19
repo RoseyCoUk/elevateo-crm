@@ -3,11 +3,12 @@
 import { useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Send } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { addComment } from '../actions';
 import { initials, relativeTime } from '@/lib/utils';
+import { PresenceDot } from '@/components/shared/presence-dot';
 import type { Task, TaskComment, User } from '@/lib/supabase/types';
 
 export function CommentList({
@@ -48,11 +49,17 @@ export function CommentList({
             const author = c.user_id ? userMap.get(c.user_id) : null;
             return (
               <div key={c.id} className="px-4 py-3 flex gap-3">
-                <Avatar>
-                  <AvatarFallback>
-                    {initials(author?.full_name || author?.email || '?')}
-                  </AvatarFallback>
-                </Avatar>
+                <span className="relative inline-flex flex-shrink-0">
+                  <Avatar>
+                    {author?.avatar_url ? (
+                      <AvatarImage src={author.avatar_url} alt={author.full_name || author.email} />
+                    ) : null}
+                    <AvatarFallback>
+                      {initials(author?.full_name || author?.email || '?')}
+                    </AvatarFallback>
+                  </Avatar>
+                  {author ? <PresenceDot user={author} size={10} /> : null}
+                </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2">
                     <span className="text-xs font-semibold">

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { initials } from '@/lib/utils';
+import { PresenceDot } from '@/components/shared/presence-dot';
 import { sendMessage } from './actions';
 import type { User } from '@/lib/supabase/types';
 
@@ -167,10 +168,13 @@ export function Composer({ roomId, users }: { roomId: string; users: User[] }) {
                     : 'hover:bg-[var(--color-surface-2)]')
                 }
               >
-                <Avatar className="h-5 w-5">
-                  {u.avatar_url ? <AvatarImage src={u.avatar_url} alt={name} /> : null}
-                  <AvatarFallback>{initials(name)}</AvatarFallback>
-                </Avatar>
+                <span className="relative inline-flex">
+                  <Avatar className="h-5 w-5">
+                    {u.avatar_url ? <AvatarImage src={u.avatar_url} alt={name} /> : null}
+                    <AvatarFallback>{initials(name)}</AvatarFallback>
+                  </Avatar>
+                  <PresenceDot user={u} size={7} />
+                </span>
                 <span className="text-[13px] text-[var(--color-fg)] truncate flex-1">{name}</span>
                 <span className="text-[11px] text-[var(--color-fg-dim)]">@{handle}</span>
               </button>
