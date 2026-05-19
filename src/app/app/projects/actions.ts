@@ -19,12 +19,20 @@ const ProjectCreate = z.object({
     .optional(),
   start_date: opt(z.string()),
   due_date: opt(z.string()),
+  member_ids: z.array(z.string().uuid()).optional(),
 });
+
+function parseProjectPayload(formData: FormData) {
+  const raw = Object.fromEntries(formData.entries());
+  return ProjectCreate.safeParse({
+    ...raw,
+    member_ids: formData.getAll('member_ids'),
+  });
+}
 
 export async function createProject(formData: FormData) {
   const { profile } = await requireCurrentUser();
-  const raw = Object.fromEntries(formData.entries());
-  const parsed = ProjectCreate.safeParse(raw);
+  const parsed = parseProjectPayload(formData);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message || 'Invalid input' };
 
   const supabase = await createClient();
@@ -45,6 +53,17 @@ export async function createProject(formData: FormData) {
     .single();
 
   if (error) return { error: error.message };
+
+  const memberIds = Array.from(new Set((parsed.data.member_ids ?? []).filter((id) => id !== parsed.data.lead_id)));
+  if (memberIds.length) {
+    const { error: memberError } = await supabase.from('project_members').insert(
+      memberIds.map((user_id) => ({
+        project_id: data!.id,
+        user_id,
+      })),
+    );
+    if (memberError) return { error: memberError.message };
+  }
 
   await supabase.from('activity_log').insert({
     entity_type: 'project',
@@ -96,7 +115,10 @@ export async function deleteProject(id: string) {
 export async function updateProject(id: string, formData: FormData) {
   const { profile } = await requireCurrentUser();
   const raw = Object.fromEntries(formData.entries());
-  const parsed = ProjectCreate.partial().safeParse(raw);
+  const parsed = ProjectCreate.partial().safeParse({
+    ...raw,
+    member_ids: formData.getAll('member_ids'),
+  });
   if (!parsed.success) return { error: 'Invalid input' };
 
   const supabase = await createClient();
@@ -114,6 +136,22 @@ export async function updateProject(id: string, formData: FormData) {
     })
     .eq('id', id);
   if (error) return { error: error.message };
+
+  const memberIds = Array.from(new Set((parsed.data.member_ids ?? []).filter((memberId) => memberId !== parsed.data.lead_id)));
+  const { error: deleteMembersError } = await supabase
+    .from('project_members')
+    .delete()
+    .eq('project_id', id);
+  if (deleteMembersError) return { error: deleteMembersError.message };
+  if (memberIds.length) {
+    const { error: memberError } = await supabase.from('project_members').insert(
+      memberIds.map((user_id) => ({
+        project_id: id,
+        user_id,
+      })),
+    );
+    if (memberError) return { error: memberError.message };
+  }
 
   await supabase.from('activity_log').insert({
     entity_type: 'project',

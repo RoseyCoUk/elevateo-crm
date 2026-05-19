@@ -16,12 +16,20 @@ const ClientCreate = z.object({
   contact_email: z.string().email().optional().or(z.literal('')),
   contact_phone: z.string().optional(),
   notes: z.string().optional(),
+  member_ids: z.array(z.string().uuid()).optional(),
 });
+
+function parseClientPayload(formData: FormData) {
+  const raw = Object.fromEntries(formData.entries());
+  return ClientCreate.safeParse({
+    ...raw,
+    member_ids: formData.getAll('member_ids'),
+  });
+}
 
 export async function createClientRecord(formData: FormData) {
   const { profile } = await requireCurrentUser();
-  const raw = Object.fromEntries(formData.entries());
-  const parsed = ClientCreate.safeParse(raw);
+  const parsed = parseClientPayload(formData);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || 'Invalid input' };
   }
@@ -46,6 +54,17 @@ export async function createClientRecord(formData: FormData) {
     .single();
 
   if (error) return { error: error.message };
+
+  const memberIds = Array.from(new Set((parsed.data.member_ids ?? []).filter((id) => id !== parsed.data.account_lead_id)));
+  if (memberIds.length) {
+    const { error: memberError } = await supabase.from('client_members').insert(
+      memberIds.map((user_id) => ({
+        client_id: data!.id,
+        user_id,
+      })),
+    );
+    if (memberError) return { error: memberError.message };
+  }
 
   await supabase.from('activity_log').insert({
     entity_type: 'client',
@@ -84,10 +103,17 @@ export async function deleteClient(id: string) {
 
 const ClientUpdate = ClientCreate.partial();
 
+function parseClientUpdatePayload(formData: FormData) {
+  const raw = Object.fromEntries(formData.entries());
+  return ClientUpdate.safeParse({
+    ...raw,
+    member_ids: formData.getAll('member_ids'),
+  });
+}
+
 export async function updateClient(id: string, formData: FormData) {
   const { profile } = await requireCurrentUser();
-  const raw = Object.fromEntries(formData.entries());
-  const parsed = ClientUpdate.safeParse(raw);
+  const parsed = parseClientUpdatePayload(formData);
   if (!parsed.success) return { error: 'Invalid input' };
 
   const supabase = await createClient();
@@ -106,6 +132,22 @@ export async function updateClient(id: string, formData: FormData) {
     .eq('id', id);
 
   if (error) return { error: error.message };
+
+  const memberIds = Array.from(new Set((parsed.data.member_ids ?? []).filter((memberId) => memberId !== parsed.data.account_lead_id)));
+  const { error: deleteMembersError } = await supabase
+    .from('client_members')
+    .delete()
+    .eq('client_id', id);
+  if (deleteMembersError) return { error: deleteMembersError.message };
+  if (memberIds.length) {
+    const { error: memberError } = await supabase.from('client_members').insert(
+      memberIds.map((user_id) => ({
+        client_id: id,
+        user_id,
+      })),
+    );
+    if (memberError) return { error: memberError.message };
+  }
 
   await supabase.from('activity_log').insert({
     entity_type: 'client',

@@ -63,6 +63,8 @@ const TABLE_KEYS = new Set<string>([
   'users',
   'clients',
   'projects',
+  'client_members',
+  'project_members',
   'tasks',
   'task_comments',
   'approvals',

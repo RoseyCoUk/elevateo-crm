@@ -22,12 +22,14 @@ export function ProjectForm({
   users,
   defaultClientId,
   existing,
+  selectedMemberIds = [],
 }: {
   clients: Client[];
   divisions: Division[];
   users: User[];
   defaultClientId?: string;
   existing?: Project;
+  selectedMemberIds?: string[];
 }) {
   const [pending, setPending] = useState(false);
   const [client, setClient] = useState<string>(existing?.client_id ?? defaultClientId ?? '');
@@ -128,6 +130,26 @@ export function ProjectForm({
             </SelectContent>
           </Select>
         </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label>Members</Label>
+        <div className="max-h-44 overflow-y-auto rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-2 space-y-1.5">
+          {users.map((u) => (
+            <label key={u.id} className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-[var(--color-surface-3)]">
+              <input
+                type="checkbox"
+                name="member_ids"
+                value={u.id}
+                defaultChecked={selectedMemberIds.includes(u.id)}
+                className="h-4 w-4"
+              />
+              <span className="truncate">{u.full_name || u.email}</span>
+            </label>
+          ))}
+        </div>
+        <p className="text-[11px] text-[var(--color-fg-dim)]">
+          One lead owns the project. Members are the people working on it.
+        </p>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">

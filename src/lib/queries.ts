@@ -2,9 +2,11 @@ import { createClient } from '@/lib/supabase/server';
 import type {
   Approval,
   Client,
+  ClientMember,
   Division,
   Notification,
   Project,
+  ProjectMember,
   Task,
   TaskComment,
   User,
@@ -85,6 +87,36 @@ export async function getProject(id: string): Promise<Project | null> {
   const supabase = await createClient();
   const { data } = await supabase.from('projects').select('*').eq('id', id).maybeSingle();
   return (data as Project) ?? null;
+}
+
+export async function getClientMembers(clientId: string): Promise<ClientMember[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('client_members')
+    .select('*')
+    .eq('client_id', clientId);
+  return (data ?? []) as ClientMember[];
+}
+
+export async function getProjectMembers(projectId: string): Promise<ProjectMember[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('project_members')
+    .select('*')
+    .eq('project_id', projectId);
+  return (data ?? []) as ProjectMember[];
+}
+
+export async function getAllClientMembers(): Promise<ClientMember[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from('client_members').select('*');
+  return (data ?? []) as ClientMember[];
+}
+
+export async function getAllProjectMembers(): Promise<ProjectMember[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from('project_members').select('*');
+  return (data ?? []) as ProjectMember[];
 }
 
 export async function getTasks(opts?: {

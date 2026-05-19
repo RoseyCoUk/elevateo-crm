@@ -126,6 +126,18 @@ export interface Project {
   updated_at: string;
 }
 
+export interface ClientMember {
+  client_id: string;
+  user_id: string;
+  created_at: string;
+}
+
+export interface ProjectMember {
+  project_id: string;
+  user_id: string;
+  created_at: string;
+}
+
 export interface Task {
   id: string;
   project_id: string;
@@ -241,6 +253,16 @@ export interface Database {
       users: { Row: User; Insert: Partial<User>; Update: Partial<User> };
       clients: { Row: Client; Insert: Partial<Client>; Update: Partial<Client> };
       projects: { Row: Project; Insert: Partial<Project>; Update: Partial<Project> };
+      client_members: {
+        Row: ClientMember;
+        Insert: Partial<ClientMember>;
+        Update: Partial<ClientMember>;
+      };
+      project_members: {
+        Row: ProjectMember;
+        Insert: Partial<ProjectMember>;
+        Update: Partial<ProjectMember>;
+      };
       tasks: { Row: Task; Insert: Partial<Task>; Update: Partial<Task> };
       task_comments: {
         Row: TaskComment;

@@ -24,6 +24,7 @@ import {
   getClient,
   getDivisions,
   getProject,
+  getProjectMembers,
   getTasks,
 } from '@/lib/queries';
 import {
@@ -42,17 +43,21 @@ export default async function ProjectDetailPage({
   const project = await getProject(id);
   if (!project) notFound();
 
-  const [tasks, users, divisions, clients, client] = await Promise.all([
+  const [tasks, users, divisions, clients, client, projectMembers] = await Promise.all([
     getTasks({ projectId: id }),
     getAllUsers(),
     getDivisions(),
     getClients(),
     project.client_id ? getClient(project.client_id) : Promise.resolve(null),
+    getProjectMembers(project.id),
   ]);
 
   const userMap = new Map(users.map((u) => [u.id, u]));
   const div = project.division_id ? divisions.find((d) => d.id === project.division_id) : null;
   const lead = project.lead_id ? userMap.get(project.lead_id) : null;
+  const members = projectMembers
+    .map((member) => userMap.get(member.user_id))
+    .filter((user): user is NonNullable<typeof user> => Boolean(user));
 
   return (
     <div>
@@ -100,6 +105,7 @@ export default async function ProjectDetailPage({
                   divisions={divisions}
                   users={users}
                   existing={project}
+                  selectedMemberIds={projectMembers.map((member) => member.user_id)}
                 />
               </DialogContent>
             </Dialog>
@@ -135,8 +141,24 @@ export default async function ProjectDetailPage({
         }
       />
 
-      <div className="p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3 p-6">
         <TaskBoard tasks={tasks} users={users} />
+        <Card>
+          <CardHeader>
+            <CardTitle>Members</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {members.length ? (
+              <div className="flex flex-wrap gap-2">
+                {members.map((member) => (
+                  <UserPill key={member.id} user={member} size="xs" />
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-[var(--color-fg-dim)]">No extra members.</div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

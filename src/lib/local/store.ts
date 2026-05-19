@@ -6,10 +6,12 @@ import type {
   ActivityLogEntry,
   Approval,
   Client,
+  ClientMember,
   Division,
   FileRow,
   Notification,
   Project,
+  ProjectMember,
   Task,
   TaskComment,
   User,
@@ -26,6 +28,8 @@ export interface Store {
   users: LocalUser[];
   clients: Client[];
   projects: Project[];
+  client_members: ClientMember[];
+  project_members: ProjectMember[];
   tasks: Task[];
   task_comments: TaskComment[];
   approvals: Approval[];
@@ -57,6 +61,8 @@ function emptyStore(): Store {
     users: [],
     clients: [],
     projects: [],
+    client_members: [],
+    project_members: [],
     tasks: [],
     task_comments: [],
     approvals: [],

@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/dialog';
 import { ProjectForm } from './project-form';
 import {
+  getAllClientMembers,
+  getAllProjectMembers,
   getAllUsers,
   getClients,
   getDivisions,
@@ -30,11 +32,13 @@ export default async function ProjectsPage({
 }) {
   const { filter = 'current' } = await searchParams;
   const { profile } = await requireCurrentUser();
-  const [projects, clients, divisions, users] = await Promise.all([
+  const [projects, clients, divisions, users, clientMembers, projectMembers] = await Promise.all([
     getProjects(),
     getClients(),
     getDivisions(),
     getAllUsers(),
+    getAllClientMembers(),
+    getAllProjectMembers(),
   ]);
   const userMap = new Map(users.map((u) => [u.id, u]));
   const clientMap = new Map(clients.map((c) => [c.id, c]));
@@ -49,7 +53,12 @@ export default async function ProjectsPage({
   if (filter === 'mine') {
     visibleProjects = projects.filter((project) => {
       const client = project.client_id ? clientMap.get(project.client_id) : null;
-      return project.lead_id === profile.id || client?.account_lead_id === profile.id;
+      return (
+        project.lead_id === profile.id ||
+        projectMembers.some((member) => member.project_id === project.id && member.user_id === profile.id) ||
+        client?.account_lead_id === profile.id ||
+        clientMembers.some((member) => member.client_id === project.client_id && member.user_id === profile.id)
+      );
     });
   } else if (filter === 'current') {
     visibleProjects = projects.filter(

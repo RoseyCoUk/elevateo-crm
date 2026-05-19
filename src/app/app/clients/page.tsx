@@ -13,7 +13,14 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { ClientForm } from './client-form';
-import { getAllUsers, getClients, getDivisions, getProjects, requireCurrentUser } from '@/lib/queries';
+import {
+  getAllClientMembers,
+  getAllUsers,
+  getClients,
+  getDivisions,
+  getProjects,
+  requireCurrentUser,
+} from '@/lib/queries';
 import { clientStatusTone, divisionTone } from '@/lib/formatters';
 import { formatDate } from '@/lib/utils';
 
@@ -24,11 +31,12 @@ export default async function ClientsPage({
 }) {
   const { filter = 'current' } = await searchParams;
   const { profile } = await requireCurrentUser();
-  const [clients, users, divisions, projects] = await Promise.all([
+  const [clients, users, divisions, projects, clientMembers] = await Promise.all([
     getClients(),
     getAllUsers(),
     getDivisions(),
     getProjects(),
+    getAllClientMembers(),
   ]);
   const userMap = new Map(users.map((u) => [u.id, u]));
   const divMap = new Map(divisions.map((d) => [d.id, d]));
@@ -37,6 +45,7 @@ export default async function ClientsPage({
       .filter(
         (client) =>
           client.account_lead_id === profile.id ||
+          clientMembers.some((member) => member.client_id === client.id && member.user_id === profile.id) ||
           projects.some((project) => project.client_id === client.id && project.lead_id === profile.id),
       )
       .map((client) => client.id),

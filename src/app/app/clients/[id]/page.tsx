@@ -20,6 +20,7 @@ import { deleteClient } from '../actions';
 import {
   getAllUsers,
   getClient,
+  getClientMembers,
   getDivisions,
   getProjects,
 } from '@/lib/queries';
@@ -44,12 +45,18 @@ export default async function ClientDetailPage({
   ]);
   if (!client) notFound();
 
-  const projects = await getProjects({ clientId: client.id });
+  const [projects, clientMembers] = await Promise.all([
+    getProjects({ clientId: client.id }),
+    getClientMembers(client.id),
+  ]);
   const userMap = new Map(users.map((u) => [u.id, u]));
   const divMap = new Map(divisions.map((d) => [d.id, d]));
 
   const div = client.primary_division_id ? divMap.get(client.primary_division_id) : null;
   const lead = client.account_lead_id ? userMap.get(client.account_lead_id) : null;
+  const members = clientMembers
+    .map((member) => userMap.get(member.user_id))
+    .filter((user): user is NonNullable<typeof user> => Boolean(user));
 
   return (
     <div>
@@ -81,7 +88,12 @@ export default async function ClientDetailPage({
                 <DialogHeader>
                   <DialogTitle>Edit client</DialogTitle>
                 </DialogHeader>
-                <ClientForm divisions={divisions} users={users} existing={client} />
+                <ClientForm
+                  divisions={divisions}
+                  users={users}
+                  existing={client}
+                  selectedMemberIds={clientMembers.map((member) => member.user_id)}
+                />
               </DialogContent>
             </Dialog>
             <Dialog>
@@ -154,6 +166,20 @@ export default async function ClientDetailPage({
             <CardTitle>Contact</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-fg-dim)] mb-1">
+                Members
+              </div>
+              {members.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {members.map((member) => (
+                    <UserPill key={member.id} user={member} size="xs" />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-[var(--color-fg-dim)]">No extra members.</div>
+              )}
+            </div>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-fg-dim)] mb-1">
                 Name

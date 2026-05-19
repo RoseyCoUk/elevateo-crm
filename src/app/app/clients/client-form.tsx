@@ -20,10 +20,12 @@ export function ClientForm({
   divisions,
   users,
   existing,
+  selectedMemberIds = [],
 }: {
   divisions: Division[];
   users: User[];
   existing?: Client;
+  selectedMemberIds?: string[];
 }) {
   const [pending, setPending] = useState(false);
   const [division, setDivision] = useState<string>(existing?.primary_division_id ?? '');
@@ -101,6 +103,26 @@ export function ClientForm({
             ))}
           </SelectContent>
         </Select>
+      </div>
+      <div className="space-y-1.5">
+        <Label>Members</Label>
+        <div className="max-h-44 overflow-y-auto rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-2 space-y-1.5">
+          {users.map((u) => (
+            <label key={u.id} className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-[var(--color-surface-3)]">
+              <input
+                type="checkbox"
+                name="member_ids"
+                value={u.id}
+                defaultChecked={selectedMemberIds.includes(u.id)}
+                className="h-4 w-4"
+              />
+              <span className="truncate">{u.full_name || u.email}</span>
+            </label>
+          ))}
+        </div>
+        <p className="text-[11px] text-[var(--color-fg-dim)]">
+          Lead stays single-owner. Members are everyone else working on this client.
+        </p>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
