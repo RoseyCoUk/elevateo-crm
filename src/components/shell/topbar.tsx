@@ -15,6 +15,7 @@ import { signOut } from '@/app/(auth)/login/actions';
 import { initials } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { roleLabel } from '@/lib/formatters';
+import { NotifySound } from './notify-sound';
 import type { User } from '@/lib/supabase/types';
 
 export function Topbar({ user, unread }: { user: User | null; unread: number }) {
@@ -31,6 +32,7 @@ export function Topbar({ user, unread }: { user: User | null; unread: number }) 
       </div>
 
       <div className="flex items-center gap-1">
+        <NotifySound unread={unread} />
         <Link
           href="/app/inbox"
           className="relative inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--color-surface-3)] transition"

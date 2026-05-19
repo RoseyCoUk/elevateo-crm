@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ProfileForm } from './profile-form';
 import { ThemeToggle } from './theme-toggle';
+import { SoundToggle } from './sound-toggle';
 import { signOut } from '@/app/(auth)/login/actions';
 import { getDivisions, requireCurrentUser } from '@/lib/queries';
 import { divisionTone, roleLabel } from '@/lib/formatters';
@@ -64,6 +65,12 @@ export default async function SettingsPage() {
                 Theme
               </div>
               <ThemeToggle />
+            </div>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-fg-dim)] mb-1">
+                Notification sound
+              </div>
+              <SoundToggle />
             </div>
             <form action={signOut}>
               <Button variant="secondary" size="sm">
