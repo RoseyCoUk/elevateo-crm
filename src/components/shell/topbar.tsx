@@ -1,5 +1,6 @@
 'use client';
 
+import { useTransition } from 'react';
 import Link from 'next/link';
 import { Bell, ChevronDown, LogOut, User as UserIcon } from 'lucide-react';
 import {
@@ -27,6 +28,18 @@ export function Topbar({
   unread: number;
   latestType: string | null;
 }) {
+  const [signingOut, startSignOut] = useTransition();
+
+  function handleSignOut() {
+    if (typeof window !== 'undefined' && localStorage.getItem('notify-sound-enabled') !== 'false') {
+      const el = new Audio('/sounds/sound-10.mp3');
+      el.volume = 0.5;
+      el.play().catch(() => {});
+    }
+    startSignOut(async () => {
+      await signOut();
+    });
+  }
   return (
     <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/80 backdrop-blur px-5 flex items-center justify-between gap-3">
       <div className="flex items-center gap-2 text-[12px] text-[var(--color-fg-muted)]">
@@ -92,22 +105,16 @@ export function Topbar({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="text-[var(--color-danger)]">
-              <form action={signOut}>
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 w-full"
-                  onClick={() => {
-                    if (typeof window !== 'undefined' && localStorage.getItem('notify-sound-enabled') !== 'false') {
-                      const el = new Audio('/sounds/sound-10.mp3');
-                      el.volume = 0.6;
-                      el.play().catch(() => {});
-                    }
-                  }}
-                >
-                  <LogOut className="h-3.5 w-3.5" /> Sign out
-                </button>
-              </form>
+            <DropdownMenuItem
+              className="text-[var(--color-danger)]"
+              disabled={signingOut}
+              onSelect={(e) => {
+                e.preventDefault();
+                handleSignOut();
+              }}
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              {signingOut ? 'Signing out...' : 'Sign out'}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

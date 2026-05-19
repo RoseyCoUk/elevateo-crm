@@ -53,7 +53,7 @@ export function NotifySound({
     if (enabled && unread > lastSeen) {
       const src = (latestType && SOUND_BY_TYPE[latestType]) || DEFAULT_SOUND;
       const el = new Audio(src);
-      el.volume = 0.6;
+      el.volume = 0.5;
       el.play().catch(() => {
         // Browsers block autoplay until first user interaction. Silently ignore.
       });

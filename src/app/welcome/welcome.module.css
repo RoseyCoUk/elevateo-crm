@@ -1,0 +1,210 @@
+.root {
+  position: fixed;
+  inset: 0;
+  background: #0a0a0c;
+  color: #f4f4f7;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
+  font-weight: 300;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  display: grid;
+  place-items: center;
+  perspective: 1000px;
+  z-index: 50;
+}
+
+.aurora {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(40% 30% at 20% 30%, rgba(110, 168, 255, 0.30), transparent 70%),
+    radial-gradient(40% 30% at 80% 70%, rgba(183, 148, 244, 0.28), transparent 70%),
+    radial-gradient(30% 25% at 50% 90%, rgba(255, 122, 200, 0.20), transparent 70%);
+  filter: blur(40px) saturate(1.2);
+  animation: drift 18s ease-in-out infinite alternate;
+  pointer-events: none;
+  transition: opacity 900ms ease;
+}
+@keyframes drift {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(2%, -3%) scale(1.05); }
+  100% { transform: translate(-3%, 2%) scale(1.02); }
+}
+
+.stars { position: absolute; inset: 0; pointer-events: none; }
+.stars span {
+  position: absolute;
+  width: 2px; height: 2px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  opacity: 0;
+  animation: twinkle 4s ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.6); }
+  50% { opacity: 0.85; transform: scale(1); }
+}
+
+.stage {
+  position: relative;
+  text-align: center;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: opacity 800ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 800ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              filter 800ms ease;
+}
+
+.mark {
+  width: 84px; height: 84px;
+  margin: 0 auto 28px;
+  opacity: 0;
+  animation: markIn 1100ms 200ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes markIn {
+  0% { opacity: 0; transform: translateY(12px) scale(0.92) rotate(-12deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+.ring {
+  fill: none;
+  stroke: url(#welcomeMarkGrad);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+  animation: draw 1500ms 350ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+.pulse {
+  fill: url(#welcomeMarkGrad);
+  opacity: 0;
+  transform-origin: center;
+  animation: pulseIn 900ms 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes pulseIn {
+  0% { opacity: 0; transform: scale(0.2); }
+  60% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 0.95; transform: scale(1); }
+}
+
+.brand {
+  font-size: clamp(40px, 7vw, 80px);
+  letter-spacing: 0.32em;
+  font-weight: 200;
+  margin-bottom: 22px;
+  white-space: nowrap;
+}
+.brand .ch {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(28px);
+  animation: rise 900ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  background: linear-gradient(180deg, #ffffff 0%, #c8d4ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@keyframes rise { to { opacity: 1; transform: translateY(0); } }
+
+.underline {
+  width: 0;
+  height: 1px;
+  margin: 0 auto 32px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: under 1400ms 1200ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes under { to { width: min(420px, 60vw); } }
+
+.welcome {
+  font-size: 16px;
+  color: rgba(244, 244, 247, 0.55);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 36px;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: rise 900ms 1600ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.cta {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  color: #f4f4f7;
+  cursor: pointer;
+  display: inline-grid;
+  place-items: center;
+  opacity: 0;
+  transform: translateY(8px) scale(0.9);
+  animation: ctaIn 900ms 2200ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  transition: transform 220ms ease, border-color 220ms ease, background 220ms ease, box-shadow 220ms ease;
+}
+@keyframes ctaIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+.cta::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid rgba(154, 188, 255, 0);
+  animation: ringPulse 2.4s 2800ms ease-in-out infinite;
+}
+@keyframes ringPulse {
+  0%, 100% { transform: scale(0.95); border-color: rgba(154, 188, 255, 0); }
+  50% { transform: scale(1.05); border-color: rgba(154, 188, 255, 0.35); }
+}
+.cta:hover {
+  transform: translateY(-1px) scale(1.04);
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 8px 30px -8px rgba(154, 188, 255, 0.35);
+}
+.cta:active { transform: scale(0.96); }
+.cta svg { width: 22px; height: 22px; transition: transform 220ms ease; }
+.cta:hover svg { transform: translateX(3px); }
+
+.hint {
+  display: block;
+  margin-top: 16px;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(244, 244, 247, 0.32);
+  opacity: 0;
+  animation: rise 900ms 2600ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.exiting .stage {
+  opacity: 0;
+  transform: scale(1.08);
+  filter: blur(8px);
+}
+.exiting .aurora { opacity: 0.4; }
+.blackout {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 800ms cubic-bezier(0.4, 0, 0.6, 1);
+}
+.exiting .blackout { opacity: 1; }
+
+@media (max-width: 520px) {
+  .brand { letter-spacing: 0.22em; }
+  .mark { width: 64px; height: 64px; margin-bottom: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora, .stars span, .mark, .ring, .pulse, .brand .ch, .underline, .welcome, .cta, .cta::after, .hint {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+  .underline { width: min(420px, 60vw) !important; }
+}

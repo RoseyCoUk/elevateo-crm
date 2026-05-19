@@ -1,0 +1,119 @@
+.root {
+  position: fixed;
+  inset: 0;
+  background: #0a0a0c;
+  color: #f4f4f7;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
+  font-weight: 300;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  display: grid;
+  place-items: center;
+  perspective: 1000px;
+  z-index: 50;
+}
+
+.aurora {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(35% 25% at 25% 35%, rgba(110, 168, 255, 0.18), transparent 70%),
+    radial-gradient(35% 25% at 75% 65%, rgba(160, 178, 220, 0.15), transparent 70%);
+  filter: blur(50px) saturate(0.9);
+  animation: drift 28s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes drift {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-2%, 1%) scale(1.03); opacity: 0.7; }
+}
+
+.stage {
+  position: relative;
+  text-align: center;
+}
+
+.mark {
+  width: 64px; height: 64px;
+  margin: 0 auto 26px;
+  opacity: 1;
+  animation: markOut 2200ms 600ms cubic-bezier(0.4, 0, 0.6, 1) forwards;
+}
+@keyframes markOut {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.25; transform: scale(0.92) translateY(6px); }
+}
+.ring { fill: none; stroke: url(#farewellMarkGrad); stroke-width: 2; stroke-linecap: round; }
+.dot { fill: url(#farewellMarkGrad); animation: dim 1800ms ease-out forwards; }
+@keyframes dim { to { opacity: 0.4; } }
+
+.brand {
+  font-size: clamp(36px, 6vw, 64px);
+  letter-spacing: 0.32em;
+  font-weight: 200;
+  margin-bottom: 20px;
+  white-space: nowrap;
+}
+.brand .ch {
+  display: inline-block;
+  opacity: 1;
+  transform: translateY(0);
+  animation: drop 900ms cubic-bezier(0.4, 0, 0.6, 1) forwards;
+  background: linear-gradient(180deg, #ffffff 0%, #c8d4ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@keyframes drop { to { opacity: 0; transform: translateY(18px); } }
+
+.underline {
+  width: min(420px, 60vw);
+  height: 1px;
+  margin: 0 auto 28px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: underFade 1400ms 200ms cubic-bezier(0.4, 0, 0.6, 1) forwards;
+}
+@keyframes underFade { to { width: 0; opacity: 0; } }
+
+.farewell {
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  color: #f4f4f7;
+  margin-bottom: 8px;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: rise 900ms 400ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards,
+             fade 1000ms 2800ms cubic-bezier(0.4, 0, 0.6, 1) forwards;
+}
+
+.sub {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(244, 244, 247, 0.55);
+  opacity: 0;
+  animation: rise 900ms 700ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards,
+             fade 800ms 2600ms cubic-bezier(0.4, 0, 0.6, 1) forwards;
+  transition: opacity 250ms ease;
+}
+@keyframes rise { to { opacity: 1; transform: translateY(0); } }
+@keyframes fade { to { opacity: 0; } }
+
+.blackout {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  animation: blackout 1200ms 3000ms cubic-bezier(0.4, 0, 0.6, 1) forwards;
+}
+@keyframes blackout { to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora, .mark, .brand .ch, .underline, .farewell, .sub, .blackout {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .blackout { display: none; }
+}

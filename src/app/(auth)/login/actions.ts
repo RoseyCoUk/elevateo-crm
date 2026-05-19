@@ -29,7 +29,8 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   if (error) return { error: error.message };
 
   revalidatePath('/', 'layout');
-  redirect(parsed.data.next?.startsWith('/') ? parsed.data.next : '/app');
+  const next = parsed.data.next?.startsWith('/') ? parsed.data.next : '/app';
+  redirect(`/welcome?next=${encodeURIComponent(next)}`);
 }
 
 export async function signUp(_prev: AuthState, formData: FormData): Promise<AuthState> {
@@ -55,7 +56,14 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
 
 export async function signOut() {
   const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  const meta = (userData.user?.user_metadata ?? {}) as { full_name?: string };
+  const firstName =
+    meta.full_name?.split(' ')[0] ||
+    userData.user?.email?.split('@')[0] ||
+    '';
   await supabase.auth.signOut();
   revalidatePath('/', 'layout');
-  redirect('/login');
+  const params = firstName ? `?name=${encodeURIComponent(firstName)}` : '';
+  redirect(`/farewell${params}`);
 }

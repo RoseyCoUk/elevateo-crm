@@ -29,7 +29,7 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
     <div className="flex flex-col h-full min-h-0">
       <PageHeader
         title="Chat"
-        description="Messages auto-delete after 7 days unless pinned. Pin anything you'd lose."
+        description="Not a Telegram replacement. Use it to keep work decisions tied to the CRM — quick async questions, task pings, lightweight nudges. Messages auto-delete after 7 days unless pinned."
       />
       <div className="grid grid-cols-[260px_1fr] gap-0 flex-1 min-h-0 border-t border-[var(--color-border)]">
         <aside className="border-r border-[var(--color-border)] bg-[var(--color-surface)] overflow-y-auto p-3 min-h-0">

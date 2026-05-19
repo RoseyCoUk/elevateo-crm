@@ -23,7 +23,7 @@ export function SoundToggle() {
 
   function preview() {
     const a = new Audio('/sounds/notify.mp3');
-    a.volume = 0.6;
+    a.volume = 0.5;
     a.play().catch(() => {});
   }
 

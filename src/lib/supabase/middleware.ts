@@ -33,6 +33,7 @@ export async function updateSession(request: NextRequest) {
     pathname === '/' ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/signup') ||
+    pathname.startsWith('/farewell') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/health');
 
