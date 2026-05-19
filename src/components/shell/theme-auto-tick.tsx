@@ -18,6 +18,8 @@ function parseTime(s: string | null, fallback: number): number {
   return h * 60 + (isNaN(m) ? 0 : m);
 }
 
+let lastApplied: boolean | null = null;
+
 function evaluate() {
   if (typeof window === 'undefined') return;
   const mode = localStorage.getItem('theme');
@@ -26,7 +28,18 @@ function evaluate() {
   const sunset = parseTime(localStorage.getItem('theme-sunset'), 19 * 60 + 30);
   const minutes = nowMinutes();
   const dark = minutes >= sunset || minutes < sunrise;
+  const isCurrentlyDark = document.documentElement.classList.contains('dark');
+  if (dark === isCurrentlyDark) return; // no flip needed
+
+  // Only animate when this is an actual day/night crossover, not a no-op.
+  if (lastApplied !== null) {
+    document.documentElement.classList.add('theme-fading');
+    window.setTimeout(() => {
+      document.documentElement.classList.remove('theme-fading');
+    }, 2700);
+  }
   document.documentElement.classList.toggle('dark', dark);
+  lastApplied = dark;
 }
 
 export function ThemeAutoTick() {
