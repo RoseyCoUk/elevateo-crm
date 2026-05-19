@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Sun, Moon, Monitor, Clock } from 'lucide-react';
+import { toast } from 'sonner';
+import { Sun, Moon, Monitor, Clock, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { computeSunTimes } from '@/lib/sun-times';
 
 type Theme = 'light' | 'dark' | 'system' | 'auto-time';
 
@@ -98,13 +100,54 @@ export function ThemeToggle() {
         })}
       </div>
       {theme === 'auto-time' ? (
-        <div className="grid grid-cols-3 gap-2 max-w-md">
-          <TimeInput label="Sunrise" value={sunrise} onChange={(v) => saveTime('theme-sunrise', v)} />
-          <TimeInput label="Sunset" value={sunset} onChange={(v) => saveTime('theme-sunset', v)} />
-          <TimeInput label="Isha (full dark)" value={isha} onChange={(v) => saveTime('theme-isha', v)} />
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2 max-w-md">
+            <TimeInput label="Sunrise" value={sunrise} onChange={(v) => saveTime('theme-sunrise', v)} />
+            <TimeInput label="Sunset" value={sunset} onChange={(v) => saveTime('theme-sunset', v)} />
+            <TimeInput label="Isha (full dark)" value={isha} onChange={(v) => saveTime('theme-isha', v)} />
+          </div>
+          <button
+            type="button"
+            onClick={() => detectFromLocation((times) => {
+              saveTime('theme-sunrise', times.sunrise);
+              saveTime('theme-sunset', times.sunset);
+              saveTime('theme-isha', times.isha);
+            })}
+            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2.5 py-1 text-[12px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition"
+          >
+            <MapPin className="h-3.5 w-3.5" />
+            Detect from my location
+          </button>
         </div>
       ) : null}
     </div>
+  );
+}
+
+function detectFromLocation(onDone: (t: { sunrise: string; sunset: string; isha: string }) => void) {
+  if (typeof navigator === 'undefined' || !navigator.geolocation) {
+    toast.error('Geolocation not available in this browser.');
+    return;
+  }
+  toast.loading('Getting your location...', { id: 'geo' });
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const { latitude, longitude } = pos.coords;
+      const times = computeSunTimes(new Date(), latitude, longitude);
+      if (!times) {
+        toast.error('Polar day/night at your latitude — set times manually.', { id: 'geo' });
+        return;
+      }
+      try {
+        localStorage.setItem('theme-location', JSON.stringify({ lat: latitude, lon: longitude }));
+      } catch {}
+      onDone(times);
+      toast.success(`Set: sunrise ${times.sunrise}, sunset ${times.sunset}, isha ${times.isha}`, { id: 'geo' });
+    },
+    (err) => {
+      toast.error(err.message || 'Could not read location.', { id: 'geo' });
+    },
+    { enableHighAccuracy: false, timeout: 8000 },
   );
 }
 

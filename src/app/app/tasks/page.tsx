@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/dialog';
 import { TaskForm } from './task-form';
 import { PixelPet } from './pixel-pet';
+import { HabitsManager } from '../habits/habits-manager';
+import { createClient } from '@/lib/supabase/server';
 import {
   getAllUsers,
   getClients,
@@ -21,6 +23,7 @@ import {
   getTasks,
   requireCurrentUser,
 } from '@/lib/queries';
+import type { Habit, HabitCompletion } from '@/lib/supabase/types';
 
 export default async function TasksPage({
   searchParams,
@@ -57,7 +60,30 @@ export default async function TasksPage({
     { label: 'Mine', key: 'mine' },
     { label: 'Awaiting my review', key: 'review' },
     { label: 'Overdue', key: 'overdue' },
+    { label: 'Daily habits', key: 'habits' },
   ];
+
+  let habits: Habit[] = [];
+  let habitDoneToday: string[] = [];
+  if (filter === 'habits') {
+    const supabase = await createClient();
+    const today = new Date().toISOString().slice(0, 10);
+    const [{ data: hs }, { data: comps }] = await Promise.all([
+      supabase
+        .from('habits')
+        .select('*')
+        .eq('user_id', profile.id)
+        .eq('is_active', true)
+        .order('sort_index'),
+      supabase
+        .from('habit_completions')
+        .select('*')
+        .eq('user_id', profile.id)
+        .eq('completed_on', today),
+    ]);
+    habits = (hs ?? []) as Habit[];
+    habitDoneToday = ((comps ?? []) as HabitCompletion[]).map((c) => c.habit_id);
+  }
 
   return (
     <div>
@@ -107,7 +133,11 @@ export default async function TasksPage({
 
       <div className="p-6 pt-2">
         <Card>
-          {tasks.length === 0 ? (
+          {filter === 'habits' ? (
+            <div className="p-4">
+              <HabitsManager habits={habits} doneToday={habitDoneToday} />
+            </div>
+          ) : tasks.length === 0 ? (
             <PixelPet />
           ) : (
             tasks.map((t) => (
