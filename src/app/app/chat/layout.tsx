@@ -3,7 +3,7 @@ import { Hash, MessageCircle, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/shell/page-header';
 import { UserPill } from '@/components/shared/user-pill';
 import { createClient } from '@/lib/supabase/server';
-import { getAllUsers, getDivisions, requireCurrentUser } from '@/lib/queries';
+import { getAllUsers, getChatUnreadByRoom, getDivisions, requireCurrentUser } from '@/lib/queries';
 import { StartDmButton } from './start-dm-button';
 
 export const dynamic = 'force-dynamic';
@@ -14,10 +14,11 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
   const users = await getAllUsers();
   const supabase = await createClient();
 
-  const { data: rooms } = await supabase
-    .from('chat_rooms')
-    .select('*')
-    .order('created_at');
+  const [{ data: rooms }, unread] = await Promise.all([
+    supabase.from('chat_rooms').select('*').order('created_at'),
+    getChatUnreadByRoom(profile.id),
+  ]);
+  const unreadByRoom = unread.byRoom;
 
   const userMap = new Map(users.map((u) => [u.id, u]));
   const divMap = new Map(divisions.map((d) => [d.id, d]));
@@ -40,6 +41,7 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
             {divisionRooms.map((r) => {
               const div = divMap.get(r.division_id!);
               if (!div) return null;
+              const n = unreadByRoom[r.id] ?? 0;
               return (
                 <Link
                   key={r.id}
@@ -47,7 +49,12 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
                   className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-[var(--color-fg-muted)] hover:bg-[var(--color-surface-3)]/70 hover:text-[var(--color-fg)] transition"
                 >
                   <Hash className="h-3.5 w-3.5" />
-                  <span>{div.name}</span>
+                  <span className="flex-1">{div.name}</span>
+                  {n > 0 ? (
+                    <span className="inline-flex min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full bg-[var(--color-danger)] text-white text-[10px] font-semibold">
+                      {n > 99 ? '99+' : n}
+                    </span>
+                  ) : null}
                 </Link>
               );
             })}
@@ -70,13 +77,19 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
                   r.user_a_id === profile.id ? r.user_b_id : r.user_a_id;
                 const other = otherId ? userMap.get(otherId) : null;
                 if (!other) return null;
+                const n = unreadByRoom[r.id] ?? 0;
                 return (
                   <Link
                     key={r.id}
                     href={`/app/chat/${r.id}`}
                     className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-[var(--color-fg-muted)] hover:bg-[var(--color-surface-3)]/70 hover:text-[var(--color-fg)] transition"
                   >
-                    <UserPill user={other} size="xs" />
+                    <span className="flex-1"><UserPill user={other} size="xs" /></span>
+                    {n > 0 ? (
+                      <span className="inline-flex min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full bg-[var(--color-danger)] text-white text-[10px] font-semibold">
+                        {n > 99 ? '99+' : n}
+                      </span>
+                    ) : null}
                   </Link>
                 );
               })

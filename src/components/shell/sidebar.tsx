@@ -62,10 +62,12 @@ const navGroups: NavItem[][] = [
 export function Sidebar({
   divisions,
   pendingApprovals,
+  chatUnread,
   user,
 }: {
   divisions: Division[];
   pendingApprovals: number;
+  chatUnread: number;
   user: User | null;
 }) {
   const pathname = usePathname();
@@ -136,6 +138,11 @@ export function Sidebar({
                     <span className="flex-1">{item.label}</span>
                     {item.href === '/app/approvals' && pendingApprovals > 0 ? (
                       <Badge tone="accent">{pendingApprovals}</Badge>
+                    ) : null}
+                    {item.href === '/app/chat' && chatUnread > 0 ? (
+                      <span className="inline-flex min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full bg-[var(--color-danger)] text-white text-[10px] font-semibold">
+                        {chatUnread > 99 ? '99+' : chatUnread}
+                      </span>
                     ) : null}
                   </Link>
                 );

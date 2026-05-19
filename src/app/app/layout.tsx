@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 
 import { Topbar } from '@/components/shell/topbar';
 import {
+  getChatUnreadByRoom,
   getCurrentUser,
   getDivisions,
   getLatestUnreadType,
@@ -19,11 +20,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const session = await getCurrentUser();
   if (!session) redirect('/login');
 
-  const [divisions, unread, latestType, pendingApprovals] = await Promise.all([
+  const [divisions, unread, latestType, pendingApprovals, chatUnread] = await Promise.all([
     getDivisions(),
     session.profile ? getUnreadNotificationCount(session.profile.id) : Promise.resolve(0),
     session.profile ? getLatestUnreadType(session.profile.id) : Promise.resolve(null),
     session.profile ? getPendingApprovalsForUser(session.profile.id) : Promise.resolve([]),
+    session.profile
+      ? getChatUnreadByRoom(session.profile.id)
+      : Promise.resolve({ total: 0, byRoom: {} as Record<string, number> }),
   ]);
 
   return (
@@ -32,6 +36,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <Sidebar
           divisions={divisions}
           pendingApprovals={pendingApprovals.length}
+          chatUnread={chatUnread.total}
           user={session.profile}
         />
       </div>

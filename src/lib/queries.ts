@@ -153,6 +153,58 @@ export async function getUnreadNotificationCount(userId: string): Promise<number
   return count ?? 0;
 }
 
+/**
+ * Returns per-room unread message counts for the given user across every chat
+ * room they have access to. A message counts as unread if it was authored by
+ * someone else and created after the user's last_read_at for that room (or
+ * the room hasn't been opened yet — treated as last_read = epoch).
+ */
+export async function getChatUnreadByRoom(
+  userId: string,
+): Promise<{ total: number; byRoom: Record<string, number> }> {
+  const supabase = await createClient();
+
+  // Rooms visible to the user are gated by RLS on chat_rooms; the select itself
+  // is enough — we don't need to filter manually.
+  const [{ data: rooms }, { data: reads }] = await Promise.all([
+    supabase.from('chat_rooms').select('id'),
+    supabase.from('chat_read_state').select('room_id, last_read_at').eq('user_id', userId),
+  ]);
+
+  const roomIds = ((rooms ?? []) as Array<{ id: string }>).map((r) => r.id);
+  if (roomIds.length === 0) return { total: 0, byRoom: {} };
+
+  const readMap = new Map<string, string>(
+    ((reads ?? []) as Array<{ room_id: string; last_read_at: string }>).map((r) => [
+      r.room_id,
+      r.last_read_at,
+    ]),
+  );
+
+  // One query covering all visible rooms — much cheaper than per-room counts.
+  // We compute unread client-side per room from a list of (room_id, created_at).
+  const { data: msgs } = await supabase
+    .from('chat_messages')
+    .select('room_id, author_id, created_at')
+    .in('room_id', roomIds)
+    .neq('author_id', userId)
+    .limit(2000);
+
+  const byRoom: Record<string, number> = {};
+  for (const m of (msgs ?? []) as Array<{
+    room_id: string;
+    author_id: string;
+    created_at: string;
+  }>) {
+    const since = readMap.get(m.room_id);
+    if (!since || m.created_at > since) {
+      byRoom[m.room_id] = (byRoom[m.room_id] ?? 0) + 1;
+    }
+  }
+  const total = Object.values(byRoom).reduce((a, b) => a + b, 0);
+  return { total, byRoom };
+}
+
 export async function getLatestUnreadType(userId: string): Promise<string | null> {
   const supabase = await createClient();
   const { data } = await supabase

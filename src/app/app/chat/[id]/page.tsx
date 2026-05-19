@@ -24,6 +24,16 @@ export default async function ChatRoomPage({
     .maybeSingle();
   if (!room) notFound();
 
+  // Mark this room read for the current user (resets the unread badge).
+  await supabase.from('chat_read_state').upsert(
+    {
+      user_id: profile.id,
+      room_id: id,
+      last_read_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id,room_id' },
+  );
+
   const [users, divisions, { data: messages }] = await Promise.all([
     getAllUsers(),
     getDivisions(),

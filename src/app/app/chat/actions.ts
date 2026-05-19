@@ -109,6 +109,26 @@ export async function deleteMessage(messageId: string) {
   return { ok: true };
 }
 
+/**
+ * Bumps last_read_at for the given room to now() for the current user.
+ * Called when a chat room is opened so unread counts reset.
+ */
+export async function markRoomRead(roomId: string) {
+  const { profile } = await requireCurrentUser();
+  const supabase = await createClient();
+  await supabase.from('chat_read_state').upsert(
+    {
+      user_id: profile.id,
+      room_id: roomId,
+      last_read_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id,room_id' },
+  );
+  revalidatePath('/app/chat');
+  revalidatePath('/app', 'layout');
+  return { ok: true };
+}
+
 export async function startDM(otherUserId: string) {
   await requireCurrentUser();
   const parsed = z.string().uuid().safeParse(otherUserId);
