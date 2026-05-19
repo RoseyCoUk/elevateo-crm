@@ -76,6 +76,15 @@ export function ProfileCardDialog({
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
               <Badge tone="default">{roleLabel[user.role]}</Badge>
+              {user.supports === 'israel' ? (
+                <span
+                  className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-700"
+                  title="Self-declared AIPAC supporter."
+                >
+                  <span aria-hidden style={{ fontSize: 11 }}>&#x2721;</span>
+                  AIPAC
+                </span>
+              ) : null}
               {(() => {
                 const s = effectiveStatus(user);
                 if (s === 'offline') return null;
@@ -93,6 +102,11 @@ export function ProfileCardDialog({
             </div>
             {user.bio ? (
               <p className="mt-2 text-[13px] text-[var(--color-fg-muted)]">{user.bio}</p>
+            ) : null}
+            {user.nationality ? (
+              <p className="mt-1 text-[11px] text-[var(--color-fg-dim)]">
+                {user.nationality}
+              </p>
             ) : null}
           </div>
         </div>
